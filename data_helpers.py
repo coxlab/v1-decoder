@@ -2,10 +2,10 @@ from scipy import stats, signal
 import numpy as np
 from itertools import zip_longest
 
-def format_timeseries(timeseries1, timeseries2, window, offset):
+def format_timeseries(timeseries1, timeseries2, window, offset, shuffle_window=3000, discard_buffer=25, standardize=True):
     X, y = make_timeseries_instances(timeseries1, timeseries2, window, offset)
-    X, y = timeseries_shuffler(X, y, 3000, 25)
-    return split_data(X, y, 0.5)
+    X, y = timeseries_shuffler(X, y, shuffle_window, discard_buffer)
+    return split_data(X, y, 0.5, standardize)
 
 def make_timeseries_instances(X, y, window_size, offset):
     X = np.asarray(X)
@@ -14,12 +14,12 @@ def make_timeseries_instances(X, y, window_size, offset):
     assert X.shape[0] == y.shape[0]
     X = np.atleast_3d(np.array([X[start:start+window_size] for start in range(0, X.shape[0] - window_size)]))
     y = y[window_size:]
-    print('pre-offset',len(X))
+    #print('pre-offset',len(X))
     if offset > 0:
         X,y = X[:-offset], y[offset:]
     elif offset < 0:
         X,y = X[-offset:],y[:offset]
-    print('post-offset',len(X))
+    #print('post-offset',len(X))
     return X, y
 
 def split_data(X, y, test_size, standardize=True):
