@@ -58,11 +58,9 @@ class tempConvDecoder(object):
         model.add(Flatten())
         model.add(Dense(self.nb_filter * 8, activation='relu'))
         model.add(Dropout(0.5))
-        model.add(
-            Dense(self.nb_output_series, activation='linear'))  # For binary classification, change the activation to 'sigmoid'
-
+        # output layer: for binary classification, change the activation to 'sigmoid'
+        model.add(Dense(self.nb_output_series, activation='linear')) 
         adam = Adam(lr=self.lr, beta_1=0.9, beta_2=0.999, epsilon=1e-08, decay=0.0)
-
         model.compile(loss='mae', optimizer=adam, metrics=['mse'])
         # To perform (binary) classification instead:
         # model.compile(loss='binary_crossentropy', optimizer='adam', metrics=['binary_accuracy'])
@@ -87,7 +85,6 @@ class tempConvDecoder(object):
             mode='auto'
         )
 
-        
         model.fit(
             self.X_train,
             self.y_train,
