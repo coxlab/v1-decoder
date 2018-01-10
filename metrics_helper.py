@@ -11,7 +11,7 @@ def get_R2(y_valid,y_hat):
     return R2
 
 def analyze_results(y_valids, y_hats):
-    assert y_valids.shape == y_hats.shape
+    assert y_valids.shape == y_hats.shape, "y_valid and y_hat are not the same shapes. y_hat: {}, y_valid: {} ".format(y_hats.shape,y_valids.shape)
     R2s = [get_R2(y_valids[:,i], y_hats[:,i]) for i in range(y_valids.shape[1])]
     rs = [pearsonr(y_valids[:,i], y_hats[:,i])[0] for i in range(y_valids.shape[1])]
     return R2s, rs
@@ -19,7 +19,7 @@ def analyze_results(y_valids, y_hats):
 def plot_results(y_valids, y_hats, y_names, R2s, rs, model_name='GRU'):
     num_figs = len(y_names)
     f = plt.figure(dpi=600,figsize=(7,3))
-    f.suptitle(model_name, fontsize=10)
+    #f.suptitle(model_name, fontsize=10)
     
     gs = gridspec.GridSpec(num_figs, 7)
 

@@ -2,10 +2,25 @@ from scipy import stats, signal
 import numpy as np
 from itertools import zip_longest
 
-def format_timeseries(timeseries1, timeseries2, window, offset, shuffle_window=3000, discard_buffer=25, standardize=True):
+def format_timeseries(timeseries1, timeseries2, window, offset, shuffle_window=600, discard_buffer=50, 
+                      standardize=True, percent_data=1.0, resample_data=False, sample_size=40000, regressor=True):
     X, y = make_timeseries_instances(timeseries1, timeseries2, window, offset)
-    X, y = timeseries_shuffler(X, y, shuffle_window, discard_buffer)
-    return split_data(X, y, 0.5, standardize)
+    if resample_data:
+        X, y = resample_Xy(X, y, sample_size=sample_size)
+    if not regressor:
+        X, y = thresh_and_label(X,y,threshold=0.2)
+        X, y = timeseries_shuffler(X, y, shuffle_window, 1)
+    else:
+        X, y = timeseries_shuffler(X, y, shuffle_window, discard_buffer)
+    X_train, X_test, y_train, y_test = split_data(X, y, 0.2, standardize)
+    print('X_train and y_train shape:', X_train.shape, y_train.shape)
+    if percent_data < 1.0:
+        X_train, y_train = percent_train(X_train, percent_data), percent_train(y_train, percent_data)
+    return X_train, X_test, y_train, y_test
+
+def percent_train(train,percent_data):
+    percent_idx = int(train.shape[0]*percent_data)
+    return train[:percent_idx]
 
 def make_timeseries_instances(X, y, window_size, offset):
     X = np.asarray(X)
@@ -84,3 +99,58 @@ def timeseries_shuffler(X, y, series_length, padding):
     y_shuffled = np.asarray(y_even)
     
     return X_shuffled, y_shuffled
+
+def group_consecutives(vals, step=1):
+    """Return list of consecutive lists of numbers from vals (number list)."""
+    run = []
+    result = [run]
+    expect = None
+    for v in vals:
+        if (v == expect) or (expect is None):
+            run.append(v)
+        else:
+            run = [v]
+            result.append(run)
+        expect = v + step
+    return result
+
+def get_turn_peaks(dx, threshold):
+    ## ephys = samples x electrode channels
+    crossings =  np.where(abs(dx) > threshold)[0]
+    peaks = []
+    grouped_crossings = group_consecutives(crossings)
+    for idx,thing in enumerate(grouped_crossings):
+        center = thing[np.argmax(abs(dx[thing]))]
+        peaks.append(center)
+        
+    return peaks
+
+def thresh_and_label(X, y, threshold=.5):
+    peaks = get_turn_peaks(y,threshold=threshold)
+
+    X_peaks = X[peaks,:]
+
+    labels = []
+    for peak in peaks:
+        if y[peak] > 0:
+            labels.append(1)
+        elif y[peak] < 0:
+            labels.append(0)
+    labels = np.atleast_2d(np.array(labels)).T
+    return X_peaks, labels
+
+def sample_inv_dist(y, sample_size=10000, bins=10000):
+    ################### sample the dx distribution evenly: ###################
+    y = np.squeeze(y)
+    hist,edges = np.histogram(y,bins=bins,normed=True)
+    bins_where_values_from = np.searchsorted(edges,y)
+    bin_weights = 1/(hist/sum(hist))
+    inv_weights = bin_weights[bins_where_values_from-1]
+    dx_idx = np.arange(0,len(y),1)
+    sampled_dx_idx = np.random.choice(dx_idx,size=sample_size,replace=False,p=inv_weights/sum(inv_weights))
+#     sampled_dx = np.random.choice(y,size=sample_size,replace=False,p=inv_weights/sum(inv_weights))
+    return np.sort(sampled_dx_idx)
+
+def resample_Xy(X,y,sample_size):
+    resampled_idxs = sample_inv_dist(y,sample_size=sample_size)
+    return X[resampled_idxs], y[resampled_idxs]
