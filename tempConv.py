@@ -20,10 +20,8 @@ class tempConvDecoder(object):
         self.run_id = kwargs['run_id']
         self.verbose = kwargs['verbose']
         self.key = kwargs['key']
-        self.timeseries1 = kwargs['dataset']['timeseries1']
-        self.timeseries2 = kwargs['dataset']['timeseries2']
-        self.nb_input_samples, self.nb_input_series = kwargs['dataset']['timeseries1'].shape
-        self.nb_output_samples, self.nb_output_series = kwargs['dataset']['timeseries2'].shape
+        self.nb_input_samples, _, self.nb_input_series = kwargs['dataset']['train'][0].shape
+        self.nb_output_samples, self.nb_output_series = kwargs['dataset']['train'][1].shape
         self.X_train, self.y_train = kwargs['dataset']['train'] 
         self.X_test, self.y_test = kwargs['dataset']['test']
 
