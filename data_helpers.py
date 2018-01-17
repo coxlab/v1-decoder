@@ -1,5 +1,4 @@
 import os
-from scipy import stats, signal
 import numpy as np
 import h5py
 from itertools import zip_longest
@@ -9,18 +8,18 @@ def format_timeseries(path, window, offset, xnds, ynds, shuffle_window=600, disc
     datasets = walk_dir(path)
     X_train, X_test, y_train, y_test = [], [], [], []
     for X, y in datasets:
-        X, y = X[:, xnds[0]:xnds[1]], y[:, ynds[0]:ynds[1]]
+        X, y = X[:, slice(*xnds)], y[:, slice(*ynds)]
         if y.ndim == 1: y = np.atleast_2d(y).T
         X, y = make_timeseries_instances(X, y, window, offset)
         if resample_data: X, y = resample_Xy(X, y, sample_size=sample_size)
-            
+
         if not regressor:
             X, y = thresh_and_label(X,y,threshold=0.2)
             X, y = timeseries_shuffler(X, y, shuffle_window, 1)
         else:
             X, y = timeseries_shuffler(X, y, shuffle_window, discard_buffer)
         X_train_ind, X_test_ind, y_train_ind, y_test_ind = split_data(X, y, 0.2, standardize)
-        
+ 
         X_train.append(X_train_ind)
         y_train.append(y_train_ind)
         X_test.append(X_test_ind)
