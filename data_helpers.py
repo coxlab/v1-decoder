@@ -196,3 +196,12 @@ def get_labels(X,y):
 def resample_Xy(X,y,sample_size):
     resampled_idxs = sample_inv_dist(y,sample_size=sample_size)
     return X[resampled_idxs], y[resampled_idxs]
+
+def avg_tetrodes(X):
+    tet_arr = []
+    for tetndx in range(int(X.shape[1]/24)):
+        tetrode = X[:, 1*tetndx:1*tetndx+24]
+        for ndx in range(int(tetrode.shape[1]/4)):
+            tet_arr.append(np.mean(tetrode[:, ndx::6], axis=1))
+    tet_arr = np.array(tet_arr)
+    return tet_arr
