@@ -4,7 +4,8 @@ import h5py
 from itertools import zip_longest
 
 def format_timeseries(path, window, offset, xnds, ynds, shuffle_window=600, discard_buffer=50, 
-                      standardize=True, resample_data=False, sample_size=40000, regressor=True):
+                      standardize=True, resample_data=False, sample_size=40000, regressor=True, 
+                      test_train_ratio=0.2, all_test=False):
     datasets = walk_dir(path)
     X_train, X_test, y_train, y_test = [], [], [], []
     for X, y in datasets:
@@ -18,7 +19,7 @@ def format_timeseries(path, window, offset, xnds, ynds, shuffle_window=600, disc
             X, y = timeseries_shuffler(X, y, shuffle_window, 1)
         else:
             X, y = timeseries_shuffler(X, y, shuffle_window, discard_buffer)
-        X_train_ind, X_test_ind, y_train_ind, y_test_ind = split_data(X, y, 0.2, standardize)
+        X_train_ind, X_test_ind, y_train_ind, y_test_ind = split_data(X, y, test_train_ratio, standardize)
  
         X_train.append(X_train_ind)
         y_train.append(y_train_ind)
@@ -28,8 +29,11 @@ def format_timeseries(path, window, offset, xnds, ynds, shuffle_window=600, disc
     y_train = np.concatenate(y_train)
     X_test = np.concatenate(X_test)
     y_test = np.concatenate(y_test)
-    print('X_train and y_train shape:', X_train.shape, y_train.shape)
-    return X_train, X_test, y_train, y_test
+    # print('X_train and y_train shape:', X_train.shape, y_train.shape)
+    if all_test:
+        return np.concatenate([X_train,X_test]), np.concatenate([y_train,y_test])
+    else:
+        return X_train, X_test, y_train, y_test
 
 def walk_dir(path):
     dataset_idxs = os.listdir(path+'/y')
