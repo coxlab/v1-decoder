@@ -11,8 +11,8 @@ def format_timeseries(dataset_paths, window, offset, xnds, ynds,
     for X_i, y_i in dataset_paths:
         X_i, y_i = read_data(X_i), read_data(y_i)
         X_i, y_i = X_i[:, slice(*xnds)], y_i[:, slice(*ynds)]
+        X_i, y_i = preprocessing.scale(X_i), y_i
         X_i, y_i = make_timeseries_instances(X_i, y_i, window, offset)
-        
         ## sub sample from timeseries frames
         r_idxs = random.sample(range(len(list(X_i))),int(len(X_i)*sample_frac))
         X_i, y_i = X_i[r_idxs], y_i[r_idxs]
