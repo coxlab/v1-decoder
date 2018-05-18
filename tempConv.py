@@ -24,6 +24,16 @@ class tempConvDecoder(object):
         self.nb_output_samples, self.nb_output_series = kwargs['dataset']['train'][1].shape
         self.X_train, self.y_train = kwargs['dataset']['train'] 
         self.X_test, self.y_test = kwargs['dataset']['test']
+        model = self.make_timeseries_regressor()
+        if self.verbose:
+            print('\n\nTimeseries ({} samples by {} series):\n'.format(self.nb_input_samples, self.nb_input_series))
+            print('\n\nExample input feature:', X[0], '\n\nExample output labels:', y[0])
+            print('\n\nModel with input size {}, output size {}'.format(
+                model.input_shape,
+                model.output_shape
+            ))
+            model.summary()
+        self.model = model
 
     def make_timeseries_regressor(self):
         dilation = [4,2] if self.pyramidal else [1,1]
@@ -77,42 +87,33 @@ class tempConvDecoder(object):
  
         return model
 
-    def fit(self):
-        model = self.make_timeseries_regressor()
-        if self.verbose:
-            print('\n\nTimeseries ({} samples by {} series):\n'.format(self.nb_input_samples, self.nb_input_series))
-            print('\n\nExample input feature:', X[0], '\n\nExample output labels:', y[0])
-            print('\n\nModel with input size {}, output size {}'.format(
-                model.input_shape,
-                model.output_shape
-            ))
-            model.summary()
+#    def fit(self):
+#        early_stopping = EarlyStopping(
+#            monitor='val_loss',
+#            min_delta=0,
+#            patience=2,
+#            verbose=0,
+#            mode='auto'
+#        )
 
-        early_stopping = EarlyStopping(
-            monitor='val_loss',
-            min_delta=0,
-            patience=2,
-            verbose=0,
-            mode='auto'
-        )
+#        model.fit(
+#            self.X_train,
+#            self.y_train,
+#            epochs=self.eps,
+#            batch_size=self.bs,
+#            validation_data=(self.X_test, self.y_test),
+#            callbacks=[early_stopping]
+#        )
 
-        model.fit(
-            self.X_train,
-            self.y_train,
-            epochs=self.eps,
-            batch_size=self.bs,
-            validation_data=(self.X_test, self.y_test),
-            callbacks=[early_stopping]
-        )
-
-        self.model = model
-
-    def determine_fit(self, plot_result=False):
-        self.y_test_hat = self.model.predict(self.X_test)
+    def determine_fit(self, X_test=None, y_test=None, plot_result=False):
+        if X_test == None:
+            X_test = self.X_test
+            y_test = self.y_test
+        y_test_hat = self.model.predict(X_test)
 
         R2s, rs = do_the_thing(
-            self.y_test,
-            self.y_test_hat,
+            y_test,
+            y_test_hat,
             self.key,
             'temp_conv_results_{}_y:{}'.format(self.run_id, self.key),
             plot_result=plot_result

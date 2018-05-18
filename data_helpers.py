@@ -1,18 +1,22 @@
 import os
+import random
 import numpy as np
 import h5py
 from sklearn import preprocessing
 from itertools import zip_longest
 
 def format_timeseries(dataset_paths, window, offset, xnds, ynds, 
-                       shuffle_window=600, discard_buffer=50):
+                       shuffle_window=600, discard_buffer=50, sample_frac=1):
     X, y, = [], []
     for X_i, y_i in dataset_paths:
         X_i, y_i = read_data(X_i), read_data(y_i)
         X_i, y_i = X_i[:, slice(*xnds)], y_i[:, slice(*ynds)]
-        X_i, y_i = preprocessing.scale(X_i), y_i
         X_i, y_i = make_timeseries_instances(X_i, y_i, window, offset)
-        X_i, y_i = timeseries_shuffler(X_i, y_i, shuffle_window, discard_buffer)
+        
+        ## sub sample from timeseries frames
+        r_idxs = random.sample(range(len(list(X_i))),int(len(X_i)*sample_frac))
+        X_i, y_i = X_i[r_idxs], y_i[r_idxs]
+#         X_i, y_i = timeseries_shuffler(X_i, y_i, shuffle_window, discard_buffer)
         X.append(X_i)
         y.append(y_i)
     X = np.concatenate(X)
