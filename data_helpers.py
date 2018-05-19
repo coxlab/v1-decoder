@@ -9,7 +9,7 @@ def format_timeseries(dataset_paths, window, offset, xnds, ynds,
                        shuffle_window=600, discard_buffer=50, sample_frac=1):
     X, y, = [], []
     for X_i, y_i in dataset_paths:
-        X_i, y_i = read_data(X_i), read_data(y_i)
+        X_i, y_i = read_data_pair(X_i, y_i)
         X_i, y_i = X_i[:, slice(*xnds)], y_i[:, slice(*ynds)]
         X_i, y_i = make_timeseries_instances(X_i, y_i, window, offset)
         
@@ -30,9 +30,18 @@ def ts_chnls(data):
         data = data.T
     return data
 
-def read_data(path):
-    data = h5py.File(path, 'r')
-    data = np.asarray([np.asarray(data[key]) for key in data.keys()])[0]
+def read_data_pair(X_path, y_path):
+    X = h5py.File(X_path, 'r')
+    X = np.array([np.array(X[key]) for key in X.keys()])[0].T
+    X = shape_data(X)
+    
+    y = h5py.File(y_path, 'r')
+    y = np.array([np.array(y[key]) for key in y.keys()]).T
+    y = shape_data(y)
+    
+    return X, y
+
+def shape_data(data):
     if data.ndim == 1: data = np.atleast_2d(data)
     data = ts_chnls(data)
     return data
