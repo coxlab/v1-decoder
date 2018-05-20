@@ -20,14 +20,11 @@ class tempConvDecoder(object):
         self.run_id = kwargs['run_id']
         self.verbose = kwargs['verbose']
         self.key = kwargs['key']
-        self.nb_input_samples, _, self.nb_input_series = kwargs['dataset']['train'][0].shape
-        self.nb_output_samples, self.nb_output_series = kwargs['dataset']['train'][1].shape
-        self.X_train, self.y_train = kwargs['dataset']['train'] 
-        self.X_test, self.y_test = kwargs['dataset']['test']
+        self.nb_input_samples, _, self.nb_input_series = kwargs['input_shape']
+        self.nb_output_samples, self.nb_output_series = kwargs['output_shape']
         model = self.make_timeseries_regressor()
         if self.verbose:
             print('\n\nTimeseries ({} samples by {} series):\n'.format(self.nb_input_samples, self.nb_input_series))
-            print('\n\nExample input feature:', X[0], '\n\nExample output labels:', y[0])
             print('\n\nModel with input size {}, output size {}'.format(
                 model.input_shape,
                 model.output_shape
