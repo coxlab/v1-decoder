@@ -5,6 +5,7 @@
 
 import os
 import gc
+import numpy as np
 from pympler import tracker
 from datetime import datetime
 from sklearn.model_selection import KFold
@@ -27,11 +28,11 @@ conf = {
     'sample_size' : 40000,
     'run_id' : datetime.now(),
     'verbose' : False,
-    'X_split' : (0,384,24),
-    'X_frac' : .4,
+    'X_split' : (0,384,6),
+    'X_frac' : .8,
     'y_split' : (7,8),
-    'y_frac' : .5, 
-    'y_names' : ['absolute pitch'],
+    'y_frac' : .8, 
+    'key' : ['absolute pitch'],
     'input_shape' : None,
     'output_shape' : None
 }
@@ -56,6 +57,8 @@ for folder in folders:
         folder+'/'+data_file_list[data_file_list.index(y_fname)]
     ])
 
+dataset_paths = np.array(dataset_paths)
+
 def sample_train_test(train_paths, test_paths, conf):
     X_train, y_train = format_timeseries(
         train_paths, 
@@ -78,14 +81,16 @@ def sample_train_test(train_paths, test_paths, conf):
     
     return X_train, y_train, X_test, y_test
 
-# split dataset_paths, n-1 to train, 1 to test
+# kfold split dataset_paths, n-1 to train, 1 to test
 kf = KFold(n_splits=len(dataset_paths))
-for train_paths, test_paths in kf.split(dataset_paths):
+for train_idx, test_idx in kf.split(dataset_paths):
+    # import pdb; pdb.set_trace()    
+    train_paths = dataset_paths[train_idx]
+    test_paths = dataset_paths[test_idx]
     print("train on:\n %s\n test on:\n %s\n" % (train_paths, test_paths))
     
     # collect statistics from each epoch
     stats = []
-    
     
     ## train for number of epochs, resampling training datasets at each new epoch
     for epoch in range(conf['eps']):
@@ -112,7 +117,7 @@ for train_paths, test_paths in kf.split(dataset_paths):
         R2s,rs = TCD.determine_fit(X_test, y_test)
         stats.append([R2s, rs])
     
-        print("R2: %s\n r: %s" % R2s, rs)
+        print("R2: %s\n r: %s" % (R2s, rs))
         gc.collect()
         tr.print_diff()
     
