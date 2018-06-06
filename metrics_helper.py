@@ -63,8 +63,10 @@ def plot_results(y_valids, y_hats, y_names, R2s, rs, model_name='GRU'):
     f.savefig(model_name + '.pdf')
     return plt
 
-def do_the_thing(y_valids, y_hats, y_names, model_name, plot_result=False):
+def do_the_thing(y_valids, y_hats, y_names, model_name, save_dir, plot_result=False):
     R2s, rs = analyze_results(y_valids, y_hats)
+    print('******************************** saving results! ********************************')
+    np.savez(save_dir + str(y_names) + '_results.npz',y_valids=y_valids,y_hats=y_hats)
     if plot_result:
         plot_results(y_valids, y_hats, y_names, R2s, rs, model_name=model_name)
     

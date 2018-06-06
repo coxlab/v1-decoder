@@ -1,4 +1,6 @@
 import numpy as np
+from sklearn import linear_model
+from sklearn.externals import joblib
 from keras.layers import Conv1D, Dense, MaxPooling1D, Flatten, Dropout
 from keras.models import Sequential
 from keras.optimizers import Adam
@@ -18,21 +20,30 @@ class tempConvDecoder(object):
         self.regressor = kwargs['regressor']
         self.pyramidal = kwargs['pyramidal']
         self.run_id = kwargs['run_id']
+        self.save_path = kwargs['save_path']
         self.verbose = kwargs['verbose']
         self.key = kwargs['key']
         self.nb_input_samples, _, self.nb_input_series = kwargs['input_shape']
         self.nb_output_samples, self.nb_output_series = kwargs['output_shape']
-        model = self.make_timeseries_regressor()
-        if self.verbose:
-            print('\n\nTimeseries ({} samples by {} series):\n'.format(self.nb_input_samples, self.nb_input_series))
-            print('\n\nModel with input size {}, output size {}'.format(
-                model.input_shape,
-                model.output_shape
-            ))
-            model.summary()
+        self.model_type = kwargs['model_type']
+
+        if self.model_type == 'ridge':
+            model = self.make_ridgeCV_model()
+        elif self.model_type == 'conv':
+            model = self.make_timeseries_regressor()
+
         self.model = model
+    
+    def make_ridgeCV_model():
+         
+        print('********************************** Making RidgeCV Model **********************************')
+        #Declare model
+        model = linear_model.RidgeCV(alphas=[0.1, 1.0, 10.0],normalize=True,fit_intercept=True)
+                    
+        return model
 
     def make_timeseries_regressor(self):
+        print('********************************** Making 1D Conv Model **********************************')
         dilation = [4,2] if self.pyramidal else [1,1]
         model = Sequential()
         model.add(Conv1D(
@@ -113,6 +124,7 @@ class tempConvDecoder(object):
             y_test_hat,
             self.key,
             'temp_conv_results_{}_y:{}'.format(self.run_id, self.key),
+            self.run_id,
             plot_result=plot_result
         )
 

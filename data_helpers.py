@@ -5,6 +5,28 @@ import h5py
 from sklearn import preprocessing
 from itertools import zip_longest
 
+def sample_train_test(train_paths, test_paths, conf):
+    X_train, y_train = format_timeseries(
+        train_paths, 
+        conf['window'],
+        conf['offset'],
+        conf['X_split'], 
+        conf['y_split'], 
+        sample_frac=conf['X_frac']
+    )
+    print('sample train loaded: %s' % train_paths)
+    X_test, y_test = format_timeseries(
+        test_paths, 
+        conf['window'],
+        conf['offset'],
+        conf['X_split'], 
+        conf['y_split'], 
+        sample_frac=conf['y_frac']
+    )
+    print('sample test loaded: %s' % test_paths)
+    
+    return X_train, y_train, X_test, y_test
+
 def format_timeseries(dataset_paths, window, offset, xnds, ynds, 
                        shuffle_window=600, discard_buffer=50, sample_frac=1):
     X, y, = [], []
