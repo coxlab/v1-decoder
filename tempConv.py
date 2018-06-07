@@ -96,25 +96,7 @@ class tempConvDecoder(object):
  
         return model
 
-#    def fit(self):
-#        early_stopping = EarlyStopping(
-#            monitor='val_loss',
-#            min_delta=0,
-#            patience=2,
-#            verbose=0,
-#            mode='auto'
-#        )
-
-#        model.fit(
-#            self.X_train,
-#            self.y_train,
-#            epochs=self.eps,
-#            batch_size=self.bs,
-#            validation_data=(self.X_test, self.y_test),
-#            callbacks=[early_stopping]
-#        )
-
-    def determine_fit(self, X_test=None, y_test=None, plot_result=False):
+    def determine_fit(self, X_test=None, y_test=None, save_result=True):
         if X_test == None:
             X_test = self.X_test
             y_test = self.y_test
@@ -124,9 +106,9 @@ class tempConvDecoder(object):
             y_test,
             y_test_hat,
             self.key,
-            'temp_conv_results_{}_y:{}'.format(self.run_id, self.key),
-            os.path.join(self.save_path,self.run_id)
-            plot_result=plot_result
+            '{}_results_{}_y:{}'.format(self.model_type, self.run_id, self.key),
+            os.path.join(self.save_path,self.run_id),
+            save_result=save_result
         )
 
         return R2s, rs
