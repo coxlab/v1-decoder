@@ -1,0 +1,30 @@
+{
+    "config": {
+        "neural_data" : "mua_firing_rates_100hz.hdf5",
+        "head_data" : "all_head_data_100hz.hdf5",
+        "rat" : "grat31",
+        "condition" : "dark",
+        "experiment" : "060718_kfold_multisession"
+    },
+    "nn_params" : {
+        "bs" : 512,
+        "eps" : 8,
+        "lr" : 0.0005,
+        "model_type" : "conv",
+        "kernel" : 2,
+        "nb_filter" : 5,
+        "window" : 60,
+        "offset" : 20,
+        "regressor" : true,
+        "pyramidal" : true,
+        "verbose" : false,
+        "X_split" : [0,384,6],
+        "X_frac" : 0.8,
+        "y_split" : [7,8],
+        "y_frac" : 0.8,
+        "key" : ["absolute pitch"],
+        "input_shape" : null,
+        "output_shape" : null
+    }
+}
+
