@@ -1,3 +1,4 @@
+import os
 import numpy as np
 from sklearn import linear_model
 from sklearn.externals import joblib
@@ -124,7 +125,7 @@ class tempConvDecoder(object):
             y_test_hat,
             self.key,
             'temp_conv_results_{}_y:{}'.format(self.run_id, self.key),
-            self.run_id,
+            os.path.join(self.save_path,self.run_id)
             plot_result=plot_result
         )
 

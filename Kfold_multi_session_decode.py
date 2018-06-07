@@ -61,35 +61,35 @@ for train_idx, test_idx in kf.split(dataset_paths):
     
     ## train for number of epochs, resampling training datasets at each new epoch
     for epoch in range(conf_nn['eps']):
-#        #### train model and test model for each Kfold
-#        # sample first round of data:
-#        X_train, y_train, X_test, y_test = [None, None, None, None] # delete residual data first
-#        X_train, y_train, X_test, y_test = sample_train_test(train_paths, test_paths, conf)
-#
+        #### train model and test model for each Kfold
+        # sample first round of data:
+        X_train, y_train, X_test, y_test = [None, None, None, None] # delete residual data first
+        X_train, y_train, X_test, y_test = sample_train_test(train_paths, test_paths, conf_nn)
+
         if epoch == 0:
-#            conf_nn['input_shape'] = X_train.shape
-#            conf_nn['output_shape'] = y_train.shape
+            conf_nn['input_shape'] = X_train.shape
+            conf_nn['output_shape'] = y_train.shape
             if not os.path.exists(save_path):
                 os.makedirs(save_path)
             with open(os.path.join(save_path, 'config.json'), 'w') as outfile:
                 json.dump(conf, outfile)
 
             ## define model on first epoch
-#            TCD = tempConvDecoder(**conf_nn)
-#
-#        print('epoch:', epoch)
-#        TCD.model.fit(
-#            X_train,
-#            y_train,
-#            epochs=1, 
-#            batch_size=conf_nn['bs']
-#        )
-#        
-#        R2s,rs = TCD.determine_fit(X_test, y_test)
-#        stats.append([R2s, rs])
-#    
-#        print("R2: %s\n r: %s" % (R2s, rs))
-#        gc.collect()
-#        tr.print_diff()
-#    
+            TCD = tempConvDecoder(**conf_nn)
+
+        print('epoch:', epoch)
+        TCD.model.fit(
+            X_train,
+            y_train,
+            epochs=1, 
+            batch_size=conf_nn['bs']
+        )
+        
+        R2s,rs = TCD.determine_fit(X_test, y_test)
+        stats.append([R2s, rs])
+    
+        print("R2: %s\n r: %s" % (R2s, rs))
+        gc.collect()
+        tr.print_diff()
+    
     print(stats)
