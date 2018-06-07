@@ -3,6 +3,7 @@ import numpy as np
 from scipy.stats import pearsonr
 import matplotlib.pyplot as plt
 import matplotlib.gridspec as gridspec
+matplotlib.use('Agg')
 import seaborn as sns
 sns.set_style('white')
 
