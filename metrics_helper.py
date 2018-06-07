@@ -69,6 +69,9 @@ def do_the_thing(y_valids, y_hats, y_names, model_name, save_dir, save_result=Tr
     if save_result:
         print('******************************** saving results! ********************************')
         np.savez(save_dir + str(y_names) + '_results.npz',y_valids=y_valids,y_hats=y_hats)
-        plot_results(y_valids, y_hats, y_names, R2s, rs, model_name, save_dir)
+        try:
+            plot_results(y_valids, y_hats, y_names, R2s, rs, model_name, save_dir)
+        except: 
+            print("Plotting error:", sys.exc_info()[0])
     
     return R2s, rs
