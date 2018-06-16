@@ -11,14 +11,16 @@ import json
 from pympler import tracker
 from datetime import datetime
 from sklearn.model_selection import KFold
-from data_helpers import sample_train_test
+from data_helpers import sample_train_test, load_data
 from tempConv import tempConvDecoder
+from other import get_sha
 tr = tracker.SummaryTracker()
 
 conf_path = os.path.abspath(sys.argv[1]) # pass path to config here as arg
 rat_path = os.path.dirname(conf_path)
 conf = json.load(open(conf_path, 'r'))
- 
+conf['git_version'] = get_sha()
+
 # set date file types, ie 'lfp_power.hdf5', from config
 X_fname = conf['config']['neural_data']
 y_fname = conf['config']['head_data']
@@ -30,31 +32,28 @@ folders = filter(lambda x: os.path.isdir(x), folders)
 
 # specify training set (dark)
 train_paths = []
-
-for folder in folders:
-    data_file_list = os.listdir(folder)
-    if True in [conf['config']['condition'] in fil for fil in data_file_list]:
-        train_paths.append([
-            folder+'/'+data_file_list[data_file_list.index(X_fname)],
-            folder+'/'+data_file_list[data_file_list.index(y_fname)]
-        ])
-
-train_paths = np.array(train_paths)
-
-# and testing set (light)
 test_paths = []
 
 for folder in folders:
     data_file_list = os.listdir(folder)
-    if True in [conf['config']['test'] in fil for fil in data_file_list]:
-        test_paths.append([
-            folder+'/'+data_file_list[data_file_list.index(X_fname)],
-            folder+'/'+data_file_list[data_file_list.index(y_fname)]
-        ])
+    # only take folder containing the desire neural data
+    if True in [conf['config']['neural_data'] in fil for fil in data_file_list]:
+        # only add to train if (dark|light)
+        if True in ['m_'+conf['config']['condition'] in fil for fil in data_file_list]:
+            train_paths.append([
+                folder+'/'+data_file_list[data_file_list.index(X_fname)],
+                folder+'/'+data_file_list[data_file_list.index(y_fname)]
+            ])
+        # only add to train if (light|dark)
+        if True in ['m_'+conf['config']['test'] in fil for fil in data_file_list]:
+            test_paths.append([
+                folder+'/'+data_file_list[data_file_list.index(X_fname)],
+                folder+'/'+data_file_list[data_file_list.index(y_fname)]
+            ])
 
+train_paths = np.array(train_paths)
 test_paths = np.array(test_paths)
 
-# kfold split dataset_paths, n-1 to train, 1 to test
 print("train on:\n %s\n test on:\n %s\n" % (train_paths, test_paths))
 
 conf_nn = conf['nn_params']
@@ -76,8 +75,7 @@ stats = []
 for epoch in range(conf_nn['eps']):
     #### train model and test model for each Kfold
     # sample first round of data:
-    X_train, y_train, X_test, y_test = [None, None, None, None] # delete residual data first
-    X_train, y_train, X_test, y_test = sample_train_test(train_paths, test_paths, conf_nn)
+    X_train, y_train = load_data(train_paths, conf_nn, sample_frac=conf_nn['X_frac'])
 
     if epoch == 0:
         conf_nn['input_shape'] = X_train.shape
@@ -95,15 +93,20 @@ for epoch in range(conf_nn['eps']):
         batch_size=conf_nn['bs']
     )
     
-    # ugly plot results if final epoch
-    if epoch+1 == int(conf_nn['eps']):
-        R2s,rs = TCD.determine_fit(X_test, y_test, save_result=True)
-    else:
-        R2s,rs = TCD.determine_fit(X_test, y_test, save_result=False)
+    X_train, y_train = [None, None] # delete residual data first
+    
+    for test_path in test_paths:
+        X_test, y_test = load_data([test_path], conf_nn, sample_frac=1)
+        # ugly plot results if final epoch
+        if epoch+1 == int(conf_nn['eps']):
+            R2s,rs = TCD.determine_fit(X_test, y_test, save_result=True)
+        else:
+            R2s,rs = TCD.determine_fit(X_test, y_test, save_result=False)
 
-    stats.append([R2s, rs])
-
-    print("R2: %s\n r: %s" % (R2s, rs))
+        X_test, y_test = [None, None] # delete residual data first
+        
+        stats.append([R2s, rs])
+        print("R2: %s\n r: %s" % (R2s, rs))
 
     gc.collect()
     tr.print_diff()

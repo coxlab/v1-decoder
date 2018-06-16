@@ -13,11 +13,13 @@ from datetime import datetime
 from sklearn.model_selection import KFold
 from data_helpers import sample_train_test
 from tempConv import tempConvDecoder
+from other import get_sha
 tr = tracker.SummaryTracker()
 
 conf_path = os.path.abspath(sys.argv[1]) # pass path to config here as arg
 rat_path = os.path.dirname(conf_path)
 conf = json.load(open(conf_path, 'r'))
+conf['git_version'] = get_sha()
 
 data_keys = [folder for folder in os.listdir(rat_path)]
 folders = [os.path.join(rat_path,folder) for folder in os.listdir(rat_path)]
@@ -32,10 +34,11 @@ dataset_paths = []
 for folder in folders:
     data_file_list = os.listdir(folder)
     if True in [conf['config']['condition'] in fil for fil in data_file_list]:
-        dataset_paths.append([
-            folder+'/'+data_file_list[data_file_list.index(X_fname)],
-            folder+'/'+data_file_list[data_file_list.index(y_fname)]
-        ])
+        if True in [conf['config']['neural_data'] in fil for fil in data_file_list]:
+            dataset_paths.append([
+                folder+'/'+data_file_list[data_file_list.index(X_fname)],
+                folder+'/'+data_file_list[data_file_list.index(y_fname)]
+            ])
 
 dataset_paths = np.array(dataset_paths)
 dataset_paths

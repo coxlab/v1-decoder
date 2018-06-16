@@ -106,8 +106,8 @@ class tempConvDecoder(object):
             y_test,
             y_test_hat,
             self.key,
-            '{}_results_{}_y:{}'.format(self.model_type, self.run_id, self.key),
-            os.path.join(self.save_path,self.run_id),
+            '{}_results_y:{}'.format(self.model_type, self.key),
+            os.path.join(self.save_path),
             save_result=save_result
         )
 

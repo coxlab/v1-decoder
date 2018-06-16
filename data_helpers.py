@@ -5,6 +5,19 @@ import h5py
 from sklearn import preprocessing
 from itertools import zip_longest
 
+def load_data(paths, conf, sample_frac=1):
+    X, y = format_timeseries(
+        paths, 
+        conf['window'],
+        conf['offset'],
+        conf['X_split'], 
+        conf['y_split'],
+        sample_frac=sample_frac
+    )
+    print('Loaded data from %s' % paths)
+    
+    return X, y
+
 def sample_train_test(train_paths, test_paths, conf):
     X_train, y_train = format_timeseries(
         train_paths, 
