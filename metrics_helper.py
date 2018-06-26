@@ -63,14 +63,14 @@ def plot_results(y_valids, y_hats, y_names, R2s, rs, model_name, save_dir):
 
     plt.tight_layout()
 
-    f.savefig(save_dir + model_name + '.pdf')
+    f.savefig(os.path.join(save_dir, model_name + '.pdf'))
     return plt
 
 def do_the_thing(y_valids, y_hats, y_names, model_name, save_dir, save_result=True):
     R2s, rs = analyze_results(y_valids, y_hats)
     if save_result:
         print('******************************** saving results! ********************************')
-        np.savez(save_dir + str(y_names) + '_results.npz',y_valids=y_valids,y_hats=y_hats)
+        np.savez(os.path.join(save_dir, str(y_names) + '_results.npz'), y_valids=y_valids, y_hats=y_hats)
         try:
             plot_results(y_valids, y_hats, y_names, R2s, rs, model_name, save_dir)
         except: 
