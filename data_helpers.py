@@ -3,6 +3,7 @@ import random
 import numpy as np
 import h5py
 from sklearn import preprocessing
+from scipy import stats, signal
 from itertools import zip_longest
 
 def load_data(paths, conf, sample_frac=1):
@@ -24,7 +25,7 @@ def sample_train_test(train_paths, test_paths, conf):
         conf['window'],
         conf['offset'],
         conf['X_split'], 
-        conf['y_split'], 
+        conf['y_split'],
         sample_frac=conf['X_frac']
     )
     print('sample train loaded: %s' % train_paths)
@@ -40,13 +41,15 @@ def sample_train_test(train_paths, test_paths, conf):
     
     return X_train, y_train, X_test, y_test
 
-def format_timeseries(dataset_paths, window, offset, xnds, ynds, 
+def format_timeseries(dataset_paths, window, offset, xnds, ynds, filter_y=False, fs=100.,
                        shuffle_window=600, discard_buffer=50, sample_frac=1):
     X, y, = [], []
     for X_i, y_i in dataset_paths:
         X_i, y_i = read_data_pair(X_i, y_i)
         X_i, y_i = X_i[:, slice(*xnds)], y_i[:, slice(*ynds)]
         X_i, y_i = preprocessing.scale(X_i), y_i
+        if filter_y:
+            y_i = efilter(y_i, [1], filt_type='lowpass', fs=fs)
         X_i, y_i = make_timeseries_instances(X_i, y_i, window, offset)
         ## sub sample from timeseries frames if sample frac
         if not sample_frac == 1:
@@ -59,6 +62,15 @@ def format_timeseries(dataset_paths, window, offset, xnds, ynds,
     y = np.concatenate(y)
     
     return X, y
+
+def efilter(ephys,freq_range,filt_order = 4,filt_type='bandpass', fs=100.):
+    
+    # design Elliptic filter:
+
+    [b,a] = signal.butter(filt_order,[freq/(fs/2) for freq in freq_range],btype=filt_type)
+    
+    filtered_trace = signal.filtfilt(b,a,ephys,axis=0)
+    return filtered_trace
 
 def ts_chnls(data):
     ## puts longest dimension (timeseries) first
