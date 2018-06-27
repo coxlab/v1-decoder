@@ -12,8 +12,9 @@ import re
 from pympler import tracker
 from datetime import datetime
 from sklearn.model_selection import KFold
+from sklearn.linear_model import Ridge
 from data_helpers import sample_train_test, load_data
-from tempConv import tempConvDecoder
+from metrics_helper import do_the_thing
 from other import get_sha
 tr = tracker.SummaryTracker()
 
@@ -48,6 +49,13 @@ full_results = {
     'stats': []
 }
 
+def make_ridgeCV_model():    
+    print('********************************** Making RidgeCV Model **********************************')
+    #Declare model
+    model = Ridge(alpha=0.1, normalize=True,fit_intercept=True)
+  
+    return model
+
 def run_Kfold(train_idx, test_idx):
     train_paths = dataset_paths[train_idx]
     test_paths = dataset_paths[test_idx]
@@ -67,54 +75,42 @@ def run_Kfold(train_idx, test_idx):
     
     results = {}
     exp_num_regex = re.compile('\d{18}')
+
+    ## train for number of epochs, resampling training datasets at each new epoch
+    #### train model and test model for each Kfold
+    # sample first round of data:
+    X_train, y_train = load_data(train_paths, conf_nn, sample_frac=conf_nn['X_frac'])
+    print("X_train.shape:", X_train.shape)
+    X_train = X_train.reshape(X_train.shape[0],(X_train.shape[1]*X_train.shape[2]))
+
+    model = make_ridgeCV_model()
+    model.fit(X_train, y_train)
+    X_train, y_train = [None, None] # delete residual data to free up space
+    
     for test_path in test_paths:
         exp_num = re.search(exp_num_regex, test_path[0]).group()
         results[exp_num] = []
-
-    ## train for number of epochs, resampling training datasets at each new epoch
-    for epoch in range(conf_nn['eps']):
-        #### train model and test model for each Kfold
-        # sample first round of data:
-        X_train, y_train = load_data(train_paths, conf_nn, sample_frac=conf_nn['X_frac'])
-        
-        if epoch == 0:
-            conf_nn['input_shape'] = X_train.shape
-            conf_nn['output_shape'] = y_train.shape
-
-            ## define model on first epoch
-            TCD = tempConvDecoder(**conf_nn)
-
-        print('epoch: %s/%s' % (epoch, conf_nn['eps']))
-
-        TCD.model.fit(
-            X_train,
-            y_train,
-            epochs=1, # ignore, we control epochs with for loop  
-            batch_size=conf_nn['bs']
+        print('indie test on: ', test_path)
+        X_test, y_test = load_data([test_path], conf_nn, sample_frac=1)
+        X_test = X_test.reshape(X_test.shape[0],(X_test.shape[1]*X_test.shape[2]))
+        # ugly plot results if final epoch
+        y_test_hat = model.predict(X_test)
+        R2s, rs = do_the_thing(
+            y_test,
+            y_test_hat,
+            conf_nn['key'],
+            '{}_results_y:{}'.format(conf_nn['model_type'], conf_nn['key']),
+            conf_nn['save_path'],
+            save_result=True
         )
-        
-        X_train, y_train = [None, None] # delete residual data to free up space
-        
-        for test_path in test_paths:
             
-            print('indie test on: ', test_path)
-            R2s,rs = [None, None]  
-            X_test, y_test = load_data([test_path], conf_nn, sample_frac=1)
-            # ugly plot results if final epoch
-            if epoch+1 == int(conf_nn['eps']):
-                pass
-                R2s,rs = TCD.determine_fit(X_test, y_test, save_result=True)
-            else:
-                pass
-                R2s,rs = TCD.determine_fit(X_test, y_test, save_result=False)
-            exp_num = re.search(exp_num_regex, test_path[0]).group()
-            results[exp_num].append([R2s,rs])
+        results[exp_num].append([R2s,rs])
 
-        print("R2: %s\n r: %s" % (R2s, rs))
+    print("R2: %s\n r: %s" % (R2s, rs))
 
-        gc.collect()
-        tr.print_diff()
-    
+    gc.collect()
+    tr.print_diff()
+
     conf_nn['results'] = results
     full_results['stats'].append(results)
     # save stats and settings after last epoch
@@ -129,6 +125,5 @@ for i in range(1, int(len(dataset_paths)/2)+1):
     	run_Kfold(train_idx, test_idx)
     	run_Kfold(test_idx, train_idx)
 
-
-with open(os.path.join(rat_path, 'results.json'), 'w') as outfile:
+with open(os.path.join(rat_path, conf['nn_params']['model_type']+'_results.json'), 'w') as outfile:
     json.dump(full_results, outfile)
