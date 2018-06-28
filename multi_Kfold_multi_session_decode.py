@@ -96,17 +96,13 @@ def run_Kfold(train_idx, test_idx):
         X_train, y_train = [None, None] # delete residual data to free up space
         
         for test_path in test_paths:
-            
-            print('indie test on: ', test_path)
-            R2s,rs = [None, None]  
             X_test, y_test = load_data([test_path], conf_nn, sample_frac=1)
             # ugly plot results if final epoch
             if epoch+1 == int(conf_nn['eps']):
-                pass
                 R2s,rs = TCD.determine_fit(X_test, y_test, save_result=True)
             else:
-                pass
                 R2s,rs = TCD.determine_fit(X_test, y_test, save_result=False)
+            X_test, y_test = [None, None] # delete residual data to free up space
             exp_num = re.search(exp_num_regex, test_path[0]).group()
             results[exp_num].append([R2s,rs])
 
@@ -130,5 +126,5 @@ for i in range(1, int(len(dataset_paths)/2)+1):
     	run_Kfold(test_idx, train_idx)
 
 
-with open(os.path.join(rat_path, 'results.json'), 'w') as outfile:
+with open(os.path.join(rat_path, conf['nn_params']['model_type']+'_results.json'), 'w') as outfile:
     json.dump(full_results, outfile)
